@@ -8,16 +8,26 @@ services:
       python manage.py collectstatic --noinput
       gunicorn aerten.wsgi:application
     envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: false
       - key: ALLOWED_HOSTS
-        value: aerten-web.onrender.com
+        value: .onrender.com
       - key: DJANGO_LOG_LEVEL
         value: INFO
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aerten_db
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://aerten-web.onrender.com
+    staticPublishPath: ./static
     autoDeploy: true
+
+  - type: postgresql
+    name: aerten_db
+    plan: free
+    ipAllowList: []
