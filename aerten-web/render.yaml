@@ -4,9 +4,9 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: |
-      python manage.py migrate
       python manage.py collectstatic --noinput
-      gunicorn aerten.wsgi:application
+      python manage.py migrate
+      gunicorn aerten.wsgi:application --bind=0.0.0.0:$PORT
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -22,8 +22,8 @@ services:
         fromDatabase:
           name: aerten_db
           property: connectionString
-      - key: CORS_ALLOWED_ORIGINS
-        value: https://aerten-web.onrender.com
+      - key: PORT
+        value: 8000
     staticPublishPath: ./static
     autoDeploy: true
 
