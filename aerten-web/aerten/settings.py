@@ -11,19 +11,19 @@ import dj_database_url
 # Load environment variables from .env file
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY: Keep the secret key in environment variables
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY: Disable debug mode in production
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
+# Allowed hosts configuration
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.sessions",
@@ -36,13 +36,15 @@ INSTALLED_APPS = [
     "rest_framework",
     "djoser",
     "employee_management",
-    "debug_toolbar",
     "core",
 ]
 
+# Add Debug Toolbar only in development
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -53,22 +55,24 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# Add Debug Toolbar Middleware only in development
+if DEBUG:
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+
+# Internal IPs for Debug Toolbar
 INTERNAL_IPS = [
-    # ...
     "127.0.0.1",
-    # ...
 ]
 
-
-CORS_ALLOWED_ORIGINS = [
-    "https://aerten-web.onrender.com",  # Remove trailing slash
+# CORS settings
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") or [
+    "https://aerten-web.onrender.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# For development only
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
+# Allow all CORS origins only in development
+CORS_ALLOW_ALL_ORIGINS = DEBUG  
 
 ROOT_URLCONF = "aerten.urls"
 
@@ -90,56 +94,36 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "aerten.wsgi.application"
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
-
-
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-
 # Database configuration
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL')  # Render injects this automatically
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
     )
 }
 
-# Update CORS settings for Render
-CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in debug mode
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
-# Static files configuration for Render
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Static files configuration
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
+# REST framework configuration
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -147,14 +131,16 @@ REST_FRAMEWORK = {
     ),
 }
 
-
+# JWT authentication settings
 SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT", "Bearer"),
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
 }
 
+# Custom user model
 AUTH_USER_MODEL = "core.User"
 
+# Djoser authentication settings
 DJOSER = {
     "SERIALIZERS": {
         "user_create": "core.serializers.UserCreateSerializer",
@@ -162,7 +148,7 @@ DJOSER = {
     }
 }
 
-
+# Caching configuration (Redis)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -174,28 +160,17 @@ CACHES = {
     }
 }
 
-
+# Logging configuration (Console logging only for Render)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
         "console": {"class": "logging.StreamHandler"},
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": "general.log",
-            "formatter": "verbose",
-        },
     },
     "loggers": {
         "": {
-            "handlers": ["console", "file"],
+            "handlers": ["console"],
             "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
-        }
-    },
-    "formatters": {
-        "verbose": {
-            "format": "{asctime} ({levelname}) - {name} - {message}",
-            "style": "{",
         }
     },
 }
