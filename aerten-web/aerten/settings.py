@@ -110,11 +110,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
 # Database configuration
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://localhost/aerten',
-        conn_max_age=600
+        default=os.getenv('DATABASE_URL')  # Render injects this automatically
     )
 }
 
