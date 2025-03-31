@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: aerten-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: |
+      python manage.py migrate
+      python manage.py collectstatic --noinput
+      gunicorn aerten.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: ALLOWED_HOSTS
+        value: aerten-web.onrender.com
+      - key: DJANGO_LOG_LEVEL
+        value: INFO
+    autoDeploy: true
